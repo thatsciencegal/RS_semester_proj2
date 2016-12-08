@@ -10,7 +10,6 @@ library(caret)
 library(randomForest)
 library(e1071)
 library(snow)
-library(stringr)
 
 ##Create a files list for each image
 rasters_2013217 <- list.files(path = "./Data", 
@@ -53,7 +52,7 @@ names(l8_2013217_tca) <- c("Brightness", "Greenness", "Wetness")
 elev <- raster("./Data/elev_mos_clp1.tif")
 
 ##Re-project the elev raster to match the Landsat data (for some reason crs = l8_2013217 wasn't working)
-new_projection < - "+proj=utm +zone=22 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0"
+new_projection <- "+proj=utm +zone=22 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0"
 elev_utm22 <- projectRaster(elev, crs=new_projection)
 
 ##Resample the elevation raster to match the Landsat rasters
@@ -94,44 +93,25 @@ extract_pixels <- function(img, training_data){
   return(dfAll)
 }
 
-#rf_model <- function(dfAll_name){
-  ##Fit the random forest model
- # modFit_rf <- train(as.factor(class) ~ 
- #                      B1 + B2 + B3 + B4 + B5 + B6 + B7 + B9 + elev + NDVI + Brightness + Wetness + Greenness, method = "rf", data = dfAll_name)
-  #return(modFit_rf)
-#}
-
-# rf_predictions <- function(img, model_name){
-#   ##Create a raster with predictions from the fitted model project
-#   beginCluster()
-#   preds_rf <- clusterR(img, raster::predict, args = list(model = model_name))
-#   endCluster()
-#   return(preds_rf)
-# }
-# 
-# mod_conf_matrix <- function(rf_model_name){
-#   ##Create a confusion matrix
-#   conf_matrix <- confusionMatrix(rf_model_name)
-#   return(conf_matrix)
-# }
-
 ##Run the extract_pixels function for the data
 l8_2013217_pixels <- extract_pixels(l8_2013217_rf_data, trainData_utm22)
 
-l8_2013217_rf <- randomForest(as.factor(class) ~ B1 + B2 + B3 + B4 + B5 + B6 + B7 + elev + NDVI + Brightness + Wetness + Greenness,
+l8_2013217_rf <- randomForest(as.factor(class) ~ B1 + B2 + B3 + B4 + B5 + B6 + B7 + elev + slope + NDVI + Brightness + Wetness + Greenness,
                               data = l8_2013217_pixels, mtry = 2, importance = TRUE, confusion = TRUE)
 
-# ##Run the random forest model for the Landsat data
-# l8_2013217_rf_mod <- rf_model(l8_2013217_pixels)
+rf_predictions <- function(img, model_name){
+  ##Create a raster with predictions from the fitted model project
+  beginCluster()
+  preds_rf <- clusterR(img, raster::predict, args = list(model = model_name))
+  endCluster()
+  return(preds_rf)
+}
 
 ##Run random forest predictions for the RF model
 l8_2013217_preds <- rf_predictions(l8_2013217_rf_data, l8_2013217_rf)
 
-# ##Run the confidence matrix
-# l8_2013217_conf_mat <- confusion(l8_2013217_rf)
-
 ##Plot the variable importance
-varImpPlot(l8_2013217_rf)
+varImpPlot(l8_2013217_rf, main = "Variable Importance")
 
 ##Write out the rasters
 writeRaster(l8_2013217, filename = "l8_2013217", format = "GTiff")
@@ -140,46 +120,3 @@ writeRaster(l8_2013217_tca, filename = "l8_2013217_tca", format = "GTiff")
 writeRaster(l8_2013217_slope, filename = "l8_2013217_slope", format = "GTiff")
 writeRaster(elev_utm22_resamp, filename = "l8_2013217_elev", format = "GTiff")
 writeRaster(l8_2013217_ndvi, filename = "l8_2013217_ndvi", format = "GTiff")
-
-# Load the training data just like you've been doing
-
-#trainData <- readOGR(dsn = "./Data/Training_Points", layer = "TO_training_points", pointDropZ = TRUE)
-#rainData_utm22 <- spTransform(trainData, crs(l8_2013217))
-#responseCol <- "Name"
-
-# get a list of all the landsat files
-
-#landsat_files <- list.files(path = "./Data", 
- #                           pattern = "LC8222067.*.TIF",
-  #                          full.names = TRUE)
-
-# get a list of all the dates
-# I'll use substr and the positions of the dates, but this
-# can be a little fragile sometimes.
-
-#dates <- substr(landsat_files, 17, 23)
-#unique_dates <- unique(dates)
-
-# create an empty vector to store the results
-#model_outputs = c()
-
-# loop over the unique dates using an index and do what you want to do for
-# each date inside the for loop. At the end store the model outputs in the
-# empty vector.
-
-#for (i in seq_along(unique_dates)){
-  
-  # perform each of the tasks you're doing now
- # rasters <- list.files(path = "./Data",
-  #                      pattern = paste("LC822067", dates[i], ".*.TIF", sep = ""),
-   #                     full.names = TRUE
-    #                    rasterstack <- stack(rasters)
-     #                   names(rasterstack) <- c(paste0("B", 1:7, coll = ""), "B9")
-      #                  pixels <- extract_pixels(rasterstack, training_data)
-       #                 model <- rf_model(pixels)
-        #                predictions <- rf_predictions(rasterstack, model)
-         #               conf_matrix <- mod_conf_matrix(model)
-                        
-                        # store one or more outputs
-          #              model_outputs[i] <- conf_matrix
-#}
