@@ -39,9 +39,6 @@ l8_2013217_ndvi <- overlay(l8_2013217_red, l8_2013217_nir, fun = function(Red, N
 ##Rename NDVI layer
 names(l8_2013217_ndvi) <- c("NDVI")
 
-##Run a PCA on the raster stack
-l8_2013217_pca <- rasterPCA(l8_2013217)
-
 ##Run a tasseled cap analysis on the raster stack
 l8_2013217_tca <- tasseledCap(l8_2013217_tca_stack, "Landsat8OLI")
 
@@ -114,9 +111,8 @@ l8_2013217_preds <- rf_predictions(l8_2013217_rf_data, l8_2013217_rf)
 varImpPlot(l8_2013217_rf, main = "Variable Importance")
 
 ##Write out the rasters
-writeRaster(l8_2013217, filename = "l8_2013217", format = "GTiff")
-writeRaster(l8_2013217_preds, filename = "l8_2013217_model_predictions", format = "GTiff")
-writeRaster(l8_2013217_tca, filename = "l8_2013217_tca", format = "GTiff")
-writeRaster(l8_2013217_slope, filename = "l8_2013217_slope", format = "GTiff")
-writeRaster(elev_utm22_resamp, filename = "l8_2013217_elev", format = "GTiff")
-writeRaster(l8_2013217_ndvi, filename = "l8_2013217_ndvi", format = "GTiff")
+writeRaster(l8_2013217_preds, filename = "l8_2013217_model_predictions", format = "GTiff", overwrite = TRUE)
+writeRaster(l8_2013217_tca, filename = "l8_2013217_tca", format = "GTiff", overwrite = TRUE)
+writeRaster(l8_2013217_slope, filename = "l8_2013217_slope", format = "GTiff", overwrite = TRUE)
+writeRaster(elev_utm22_resamp, filename = "l8_2013217_elev", format = "GTiff", overwrite = TRUE)
+writeRaster(l8_2013217_ndvi, filename = "l8_2013217_ndvi", format = "GTiff", overwrite = TRUE)
